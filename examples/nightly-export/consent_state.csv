@@ -1,0 +1,5 @@
+customer_id,email,consent_state,updated_at
+10001,a.keller@example.invalid,granted,2026-09-14
+10002,b.moreau@example.invalid,withdrawn,2026-09-15
+10003,c.nowak@example.invalid,granted,2026-09-16
+10004,d.ferraro@example.invalid,granted,2026-09-17

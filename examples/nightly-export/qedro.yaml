@@ -1,0 +1,30 @@
+# What Qedro needs that no event can carry.
+#
+# The controller is an organisation, not a pipeline, and Art. 30(1)(d) and (g) —
+# recipients and security measures — are arrangements rather than things that
+# happen, so they are declared here and marked as declared wherever they are
+# printed. Everything else in the record below comes from the events the export
+# emitted, which is the point of the example.
+
+controller:
+  name: ACME Finanz GmbH
+  contact: datenschutz@acme-finanz.example
+  dpo: Dr. R. Voss, Datenschutzbeauftragte
+
+domains:
+  - crm
+
+jobs:
+  # Deliberately empty. The export declares its own purpose and legal basis, so
+  # there is nothing to fall back to — and a record built from these events does
+  # not depend on this file being kept current.
+  "acme.crm/nightly-consent-export":
+    # Said rather than guessed. Without it Qedro reads the domain off the job
+    # namespace, which is right here and wrong wherever a scheduler names its
+    # own namespace — and the record says it guessed.
+    domain: crm
+    recipients:
+      - Versandpartner Nord GmbH, as processor for postal consent notices
+    security_measures:
+      - the export is encrypted at rest and deleted after 30 days
+      - access limited to the CRM domain's engineers

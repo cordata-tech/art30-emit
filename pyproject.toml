@@ -1,0 +1,69 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "art30-emit"
+description = "Emit the OpenLineage Art. 30 processing facet from code that emits nothing today"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+authors = [{ name = "Cordata", email = "contact@cordata.tech" }]
+keywords = ["openlineage", "gdpr", "dsgvo", "ropa", "governance", "data-lineage"]
+dynamic = ["version"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Database",
+]
+
+# One runtime dependency, and it is the standard's own client. Building events by
+# hand would mean tracking the spec ourselves and getting a field wrong quietly,
+# which is the failure this whole family of tools exists to avoid.
+dependencies = ["openlineage-python>=1.20"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+art30-emit = "art30_emit.__main__:main"
+
+[project.urls]
+Homepage = "https://cordata.tech"
+Source = "https://github.com/cordata-tech/art30-emit"
+"The facet" = "https://github.com/cordata-tech/qedro/blob/main/docs/art30-facet.md"
+
+[tool.hatch.version]
+path = "src/art30_emit/__init__.py"
+
+# The wheel is the code. The sdist is the code plus what is needed to check that
+# the code does what it says — the tests, the worked example and the script that
+# captures its transcript — because a package arguing that claims should be
+# verifiable, shipped in an artefact where they cannot be, makes the opposite
+# point.
+#
+# Hatchling's default sdist is "everything git does not ignore", which sweeps in
+# the colocated `.jj` directory and its whole operation log. Listed explicitly
+# rather than excluded by name, so a directory added later has to be considered
+# instead of shipping by default.
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "src",
+    "tests",
+    "tools",
+    "examples",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests", "tools", "examples/nightly-export"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

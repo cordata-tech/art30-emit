@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# The worked example generates these; `transcript.md` is the committed record of
+# what a run produced, and `tools/capture_example.py --check` keeps it honest.
+examples/nightly-export/events.jsonl
+examples/nightly-export/nightly.csv

@@ -1,0 +1,95 @@
+name: Release
+
+# Fires on a `v*` tag. The tag is the decision; everything here is mechanical.
+#
+# Before the first release this needs a **trusted publisher** configured on PyPI
+# for `cordata-tech/art30-emit`, workflow `release.yml`, environment `pypi`.
+# Trusted publishing rather than an API token: there is no long-lived credential
+# to leak, and a package whose whole argument is about provenance should not be
+# uploading artefacts from a secret in a settings page.
+on:
+  push:
+    tags: ["v*"]
+  # A dry run — everything except the upload, so the workflow can be proved
+  # before a tag is pushed, which is the one thing that cannot be taken back.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: The tag matches the version in the package
+        if: github.event_name == 'push'
+        run: |
+          python - <<'PY'
+          import os, sys
+          from art30_emit import __version__
+          tag = os.environ["GITHUB_REF_NAME"]
+          if tag != f"v{__version__}":
+              sys.exit(f"tag {tag} does not match art30-emit {__version__}")
+          print(f"{tag} matches art30-emit {__version__}")
+          PY
+
+      - name: The changelog has an entry for it
+        if: github.event_name == 'push'
+        run: |
+          python - <<'PY'
+          import os, pathlib, sys
+          version = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          changelog = pathlib.Path("CHANGELOG.md").read_text().splitlines()
+          heading = next((line for line in changelog if line.startswith(f"## {version}")), None)
+          if heading is None:
+              sys.exit(f"CHANGELOG.md has no entry for {version}")
+          # A release whose changelog still says "unreleased" is one nobody
+          # updated. Cheaper to fail here than to notice on PyPI, where the
+          # version number cannot be reused.
+          if "unreleased" in heading.lower():
+              sys.exit(f"CHANGELOG.md still marks {version} as unreleased — date it")
+          print(f"CHANGELOG.md documents {version}: {heading}")
+          PY
+
+      - name: Test
+        run: pytest -q
+
+  build:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check dist/*
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    # Only a tag publishes. A manual run stops after the build, which is what
+    # makes the dry run safe to use.
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # trusted publishing; no API token anywhere
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
