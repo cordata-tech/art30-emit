@@ -56,7 +56,9 @@ only-include = [
     "tools",
     "examples",
     "CHANGELOG.md",
+    "CONTRIBUTING.md",
     "README.md",
+    "SECURITY.md",
     "LICENSE",
 ]
 
