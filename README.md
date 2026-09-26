@@ -1,5 +1,10 @@
 # art30-emit
 
+[![CI status on main](https://github.com/cordata-tech/art30-emit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/cordata-tech/art30-emit/actions/workflows/ci.yml)
+[![art30-emit on PyPI](https://img.shields.io/pypi/v/art30-emit)](https://pypi.org/project/art30-emit/)
+[![Python versions art30-emit runs on](https://img.shields.io/pypi/pyversions/art30-emit)](https://pypi.org/project/art30-emit/)
+[![Licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-blue)](LICENSE)
+
 Put the OpenLineage **Art. 30 processing facet** on the wire from code that emits
 nothing today.
 
