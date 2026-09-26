@@ -7,7 +7,7 @@ without a major version is what goes on the wire: the `processing` facet's key a
 schema URL, and the use of the standard `tags` dataset facet for classification,
 because a consumer's record depends on both.
 
-## 0.1.0 — unreleased
+## 0.1.0 — 2026-09-26
 
 The first version, and the whole of it: put the Art. 30 facet on the wire from code
 no OpenLineage integration can reach.
