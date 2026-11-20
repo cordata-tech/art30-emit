@@ -156,6 +156,8 @@ Record of processing activities — ACME Finanz GmbH
                   recipients, (e) transfers to third countries, (f) time limits for
                   erasure and (g) security measures — (d) and (g) can only be declared,
                   because no lineage carries either and nothing here evidences them
+    passed over   6 files not read, because neither their names nor their starts say
+                  they hold events: README.md, consent_state.csv, export.py and 3 more
     domains       crm from a mapping rule
     This record covers processing performed by pipelines that emit lineage, and any
     activities declared with no lineage. Systems that do not emit lineage — CRM, HR,
