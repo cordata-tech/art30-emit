@@ -1,0 +1,30 @@
+# Who gets asked to review what.
+#
+# One maintainer today, so most of this is routing rather than gatekeeping. The
+# paths listed separately are the ones where a change is easy to make and
+# expensive to get wrong, and a note to a future second maintainer about which
+# files deserve a slower read.
+
+*                               @lhadhazy
+
+# The facet key and schema URL. qedro and pipeline-runtime match on these
+# strings, so a change here breaks a record somebody else depends on.
+/src/art30_emit/__init__.py     @lhadhazy
+
+# How a declaration becomes facets on the wire, and how the wrapper runs the
+# command it is given.
+/src/art30_emit/emit.py         @lhadhazy
+/src/art30_emit/__main__.py     @lhadhazy
+
+# Releases. Pushing a `v*` tag publishes to PyPI, where a version number can
+# never be reused; `dependencies` is a supply-chain path into every install.
+/.github/workflows/             @lhadhazy
+/pyproject.toml                 @lhadhazy
+/CHANGELOG.md                   @lhadhazy
+
+# The rules every contributor and agent works to.
+/AGENTS.md                      @lhadhazy
+/CONTRIBUTING.md                @lhadhazy
+/CODE_OF_CONDUCT.md             @lhadhazy
+/.github/pull_request_template.md @lhadhazy
+/.github/ISSUE_TEMPLATE/        @lhadhazy

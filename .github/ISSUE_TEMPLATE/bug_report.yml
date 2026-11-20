@@ -1,0 +1,78 @@
+name: Bug report
+description: art30-emit put something wrong on the wire, or changed what the wrapped code did
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. The most valuable report this project can get is an event that says
+        something the caller never declared, or a run whose outcome the wrapper changed.
+
+        **Event metadata can be revealing.** Job names, dataset keys and tags can say a lot
+        about the data behind them. Share the smallest event that shows the problem, and
+        rename anything you would not publish. A security problem goes to a private
+        advisory instead — see SECURITY.md.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of problem
+      options:
+        - A field in the processing facet is wrong, empty, or present when nobody declared it
+        - Classification tags are wrong or missing
+        - A dataset or job name was split or changed
+        - The wrapped command's output, exit status or behaviour changed
+        - No event was sent, or it went to the wrong place
+        - A crash, or an error message that did not say what to do
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: art30-emit and openlineage-python versions
+      description: "`pip show art30-emit openlineage-python | grep -E '^(Name|Version)'`"
+      placeholder: art30-emit 0.1.0, openlineage-python 1.23.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: call
+    attributes:
+      label: The call or command you ran
+      description: The `declare(...)` call, or the `art30-emit … -- <command>` line. Paths may be shortened; keep every option.
+      render: shell
+      placeholder: art30-emit --job acme/nightly --purpose billing --legal-basis contract --writes warehouse/out -- ./export.sh
+    validations:
+      required: true
+
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened, and what you expected instead
+      description: The event, or the part of it that is wrong, and what it should have said.
+    validations:
+      required: true
+
+  - type: textarea
+    id: events
+    attributes:
+      label: The event that shows it
+      description: Optional, and the fastest route to a fix. `ART30_EMIT_FILE=events.jsonl` writes events to a file. Redacted is fine.
+      render: json
+
+  - type: input
+    id: environment
+    attributes:
+      label: Python, operating system, and where events go
+      placeholder: Python 3.13 on Ubuntu 24.04, into Marquez over HTTP
+
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Did a coding agent help find or write this up? (optional)
+      description: Welcome either way; it tells us how to read the report.
+      options:
+        - "No"
+        - "Yes"
