@@ -26,7 +26,9 @@ classifiers = [
 dependencies = ["openlineage-python>=1.20"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.6"]
+# ruff and codespell pinned exactly: a new release changes what they flag, and
+# that should arrive as a change here rather than as a red main.
+dev = ["pytest>=8", "ruff==0.17.2", "codespell==2.4.3"]
 
 [project.scripts]
 art30-emit = "art30_emit.__main__:main"
@@ -69,3 +71,8 @@ src = ["src", "tests", "tools", "examples/nightly-export"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.codespell]
+# Run by CI and the pre-commit hook. Captured events and built artefacts are not
+# prose.
+skip = "./.venv,./.git,./.jj,./build,./dist,*.json,*.jsonl,*.ndjson"
