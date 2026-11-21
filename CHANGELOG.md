@@ -7,6 +7,17 @@ without a major version is what goes on the wire: the `processing` facet's key a
 schema URL, and the use of the standard `tags` dataset facet for classification,
 because a consumer's record depends on both.
 
+## Unreleased
+
+- **The launching task is named as parent, when `OPENLINEAGE_PARENT_ID` is set.**
+  Every event then carries the standard `parent` run facet, built from the same
+  `namespace/job/run_id` value `dbt-ol` reads from that variable (and `root`, from
+  `OPENLINEAGE_ROOT_PARENT_ID`, when that is set too) — so an orchestrator already
+  configured for dbt, such as Airflow's `lineage_parent_id` macro, needs nothing
+  new. A malformed value is refused with a sentence naming the expected shape,
+  rather than carried onto the wire as a facet with some of its fields missing.
+  Unset, nothing changes.
+
 ## 0.1.0 — 2026-09-26
 
 The first version, and the whole of it: put the Art. 30 facet on the wire from code

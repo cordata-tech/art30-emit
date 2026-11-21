@@ -33,7 +33,7 @@ from openlineage.client.event_v2 import (
     RunState,
     set_producer,
 )
-from openlineage.client.facet_v2 import JobFacet, error_message_run
+from openlineage.client.facet_v2 import JobFacet, error_message_run, parent_run
 from openlineage.client.generated import tags_dataset
 from openlineage.client.transport.file import FileConfig, FileTransport
 
@@ -137,6 +137,62 @@ def split(key: str) -> tuple[str, str]:
     return namespace, name
 
 
+#: The env vars `dbt-ol` reads to name the run that launched this one. Airflow's
+#: OpenLineage provider hands exactly these to any task through its
+#: `lineage_parent_id` and `lineage_root_parent_id` macros, so an orchestrator
+#: already configured for dbt needs nothing new to be named as the parent here.
+PARENT_ID_ENV = "OPENLINEAGE_PARENT_ID"
+ROOT_PARENT_ID_ENV = "OPENLINEAGE_ROOT_PARENT_ID"
+
+
+def _parse_parent_id(value: str, var: str) -> tuple[str, str, str]:
+    """`namespace/job/run_id`, the shape `dbt-ol` reads from the same variable.
+
+    The run id must be a UUID, because `ParentRunFacet.run.runId` accepts nothing
+    else. Either failure is refused outright rather than carried onto the wire as
+    a facet with some of its fields missing.
+    """
+    parts = value.split("/")
+    if len(parts) == 3 and parts[0] and parts[1]:
+        try:
+            uuid.UUID(parts[2])
+        except ValueError:
+            pass
+        else:
+            return parts[0], parts[1], parts[2]
+    raise ValueError(
+        f"{var} {value!r} should be `namespace/job/run_id`, for example "
+        "`airflow/acme_daily.newsletter_export/f99310b4-3c3c-1a1a-2b2b-c1b95c24ff11`"
+    )
+
+
+def _parent_facet() -> parent_run.ParentRunFacet | None:
+    """The standard `parent` run facet, from the env vars above.
+
+    `None` when `OPENLINEAGE_PARENT_ID` is unset, so nothing changes on the wire
+    for a caller who sets neither.
+    """
+    parent_id = os.environ.get(PARENT_ID_ENV)
+    if not parent_id:
+        return None
+    namespace, job, run_id = _parse_parent_id(parent_id, PARENT_ID_ENV)
+
+    root = None
+    root_parent_id = os.environ.get(ROOT_PARENT_ID_ENV)
+    if root_parent_id:
+        root_namespace, root_job, root_run_id = _parse_parent_id(root_parent_id, ROOT_PARENT_ID_ENV)
+        root = parent_run.Root(
+            run=parent_run.RootRun(runId=root_run_id),
+            job=parent_run.RootJob(namespace=root_namespace, name=root_job),
+        )
+
+    return parent_run.ParentRunFacet(
+        run=parent_run.Run(runId=run_id),
+        job=parent_run.Job(namespace=namespace, name=job),
+        root=root,
+    )
+
+
 def _datasets(declaration: Declaration, keys: Sequence[str], cls: Any) -> list[Any]:
     out = []
     for key in keys:
@@ -174,6 +230,9 @@ def _event(
         )
 
     run_facets: dict[str, Any] = {}
+    parent = _parent_facet()
+    if parent is not None:
+        run_facets["parent"] = parent
     if error is not None:
         run_facets["errorMessage"] = error_message_run.ErrorMessageRunFacet(
             message=str(error) or type(error).__name__,

@@ -89,6 +89,17 @@ ART30_EMIT_FILE=events.jsonl art30-emit --job demo/hello --purpose demonstration
     --legal-basis consent -- echo hello
 ```
 
+## Naming the task that launched this job
+
+When `OPENLINEAGE_PARENT_ID` is set to `namespace/job/run_id`, every event carries
+the standard `parent` run facet naming that job and run, and `root` too if
+`OPENLINEAGE_ROOT_PARENT_ID` is set — the same two variables `dbt-ol` reads, so an
+orchestrator already configured for dbt, such as an Airflow task using its
+`lineage_parent_id` macro, needs nothing new to be named as the parent here. A
+value not in that three-part form is refused with a sentence naming the shape,
+rather than producing a facet with some of its fields missing. Neither variable
+set, nothing changes on the wire.
+
 ## Two rules it keeps
 
 **It emits the published facet, not one of its own.** The schema is
