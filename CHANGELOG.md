@@ -7,7 +7,7 @@ without a major version is what goes on the wire: the `processing` facet's key a
 schema URL, and the use of the standard `tags` dataset facet for classification,
 because a consumer's record depends on both.
 
-## Unreleased
+## 0.2.0 — 2026-11-21
 
 - **The launching task is named as parent, when `OPENLINEAGE_PARENT_ID` is set.**
   Every event then carries the standard `parent` run facet, built from the same
