@@ -2,7 +2,9 @@
 
 Captured by `tools/capture_example.py`, not written by hand. The run id and the
 event timestamps are replaced with `<run-id>` and `<timestamp>` because they
-change on every run; everything else is what the commands printed.
+change on every run, and the OpenLineage client's version with
+`<client-version>` because it changes with each client release; everything else
+is what the commands printed.
 
 ## Emitting
 
@@ -109,7 +111,7 @@ The first event, reformatted for reading:
           {
             "key": "openlineage_client_version",
             "source": "OPENLINEAGE_CLIENT",
-            "value": "1.53.0"
+            "value": "<client-version>"
           }
         ]
       }

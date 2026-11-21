@@ -5,8 +5,10 @@ this package become a record that stands on emitted evidence — so it is captur
 rather than written, and `--check` fails when the captured file and a fresh run
 disagree.
 
-Two fields are replaced before comparison, because they change on every run and
-nothing in the claim depends on them: the run id and the event timestamps. The
+Three fields are replaced before comparison, because nothing in the claim depends
+on them: the run id and the event timestamps, which change on every run, and the
+OpenLineage client's version, which the client tags every run with and which
+changes with whatever release of `openlineage-python` the installer picked. The
 replacement is visible in the transcript itself, so nobody reads a placeholder as
 a real value.
 
@@ -39,7 +41,9 @@ HEADER = """# What the example produced
 
 Captured by `tools/capture_example.py`, not written by hand. The run id and the
 event timestamps are replaced with `<run-id>` and `<timestamp>` because they
-change on every run; everything else is what the commands printed.
+change on every run, and the OpenLineage client's version with
+`<client-version>` because it changes with each client release; everything else
+is what the commands printed.
 
 ## Emitting
 
@@ -100,6 +104,9 @@ def capture() -> str:
     )
 
     first = json.loads(EVENTS.read_text().splitlines()[0])
+    for tag in first.get("run", {}).get("facets", {}).get("tags", {}).get("tags", []):
+        if tag.get("key") == "openlineage_client_version":
+            tag["value"] = "<client-version>"
     ropa = _run(["qedro", "ropa", ".", "--config", "qedro.yaml"])
 
     return HEADER.format(
