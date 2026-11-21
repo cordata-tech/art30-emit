@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import pytest
+from openlineage.client.facet_v2 import parent_run
 
 from art30_emit import FACET_KEY, FACET_SCHEMA, Declaration, declare
 from art30_emit.emit import split
@@ -159,3 +160,104 @@ def test_the_producer_names_this_package(events: Callable[[], list[dict]]) -> No
         pass
 
     assert events()[0]["producer"].endswith("art30-emit")
+
+
+def test_with_parent_id_every_event_carries_the_parent_facet(
+    events: Callable[[], list[dict]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(
+        "OPENLINEAGE_PARENT_ID",
+        "airflow/acme_daily.newsletter_export/f99310b4-3c3c-1a1a-2b2b-c1b95c24ff11",
+    )
+    with declare("acme.crm/export"):
+        pass
+
+    for event in events():
+        facet = event["run"]["facets"]["parent"]
+        assert facet["job"]["namespace"] == "airflow"
+        assert facet["job"]["name"] == "acme_daily.newsletter_export"
+        assert facet["run"]["runId"] == "f99310b4-3c3c-1a1a-2b2b-c1b95c24ff11"
+
+
+def test_with_root_parent_id_the_facet_carries_root_too(
+    events: Callable[[], list[dict]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(
+        "OPENLINEAGE_PARENT_ID",
+        "airflow/acme_daily.newsletter_export/f99310b4-3c3c-1a1a-2b2b-c1b95c24ff11",
+    )
+    monkeypatch.setenv(
+        "OPENLINEAGE_ROOT_PARENT_ID",
+        "prefect/root-flow/bbbbbbbb-0000-0000-0000-000000000002",
+    )
+    with declare("acme.crm/export"):
+        pass
+
+    root = events()[0]["run"]["facets"]["parent"]["root"]
+    assert root["job"]["namespace"] == "prefect"
+    assert root["job"]["name"] == "root-flow"
+    assert root["run"]["runId"] == "bbbbbbbb-0000-0000-0000-000000000002"
+
+
+def test_without_parent_id_no_parent_facet(events: Callable[[], list[dict]]) -> None:
+    with declare("acme.crm/export"):
+        pass
+
+    assert "parent" not in events()[0]["run"]["facets"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "not-three-parts",
+        "airflow/acme_daily.newsletter_export/not-a-uuid",
+        "airflow//f99310b4-3c3c-1a1a-2b2b-c1b95c24ff11",
+    ],
+)
+def test_a_malformed_parent_id_is_refused(
+    events: Callable[[], list[dict]], monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    monkeypatch.setenv("OPENLINEAGE_PARENT_ID", value)
+    with pytest.raises(ValueError, match="OPENLINEAGE_PARENT_ID"), declare("acme.crm/export"):
+        pass
+
+    assert events() == []
+
+
+def test_a_malformed_root_parent_id_is_refused(
+    events: Callable[[], list[dict]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(
+        "OPENLINEAGE_PARENT_ID",
+        "airflow/acme_daily.newsletter_export/f99310b4-3c3c-1a1a-2b2b-c1b95c24ff11",
+    )
+    monkeypatch.setenv("OPENLINEAGE_ROOT_PARENT_ID", "invalid-not-three-parts")
+    with pytest.raises(ValueError, match="OPENLINEAGE_ROOT_PARENT_ID"), declare("acme.crm/export"):
+        pass
+
+    assert events() == []
+
+
+def test_the_parent_facet_matches_what_dbt_ol_builds_for_the_same_values(
+    events: Callable[[], list[dict]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`dbt-ol` builds this same standard facet from the same env vars, in
+    `openlineage.common.provider.dbt.facets.ParentRunMetadata.to_openlineage`; this
+    checks the event against that shape rather than a private assumption about it.
+    """
+    monkeypatch.setenv(
+        "OPENLINEAGE_PARENT_ID",
+        "airflow/acme_daily.newsletter_export/f99310b4-3c3c-1a1a-2b2b-c1b95c24ff11",
+    )
+    with declare("acme.crm/export"):
+        pass
+
+    expected = parent_run.ParentRunFacet(
+        run=parent_run.Run(runId="f99310b4-3c3c-1a1a-2b2b-c1b95c24ff11"),
+        job=parent_run.Job(namespace="airflow", name="acme_daily.newsletter_export"),
+    )
+    facet = events()[0]["run"]["facets"]["parent"]
+    assert facet["_schemaURL"] == expected._get_schema()
+    assert facet["job"]["namespace"] == expected.job.namespace
+    assert facet["job"]["name"] == expected.job.name
+    assert facet["run"]["runId"] == expected.run.runId

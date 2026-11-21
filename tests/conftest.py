@@ -18,6 +18,8 @@ def events(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Callable[[], list
     monkeypatch.setenv("ART30_EMIT_FILE", str(target))
     monkeypatch.delenv("OPENLINEAGE_URL", raising=False)
     monkeypatch.delenv("OPENLINEAGE_CONFIG", raising=False)
+    monkeypatch.delenv("OPENLINEAGE_PARENT_ID", raising=False)
+    monkeypatch.delenv("OPENLINEAGE_ROOT_PARENT_ID", raising=False)
 
     def read() -> list[dict]:
         if not target.exists():
