@@ -100,6 +100,24 @@ value not in that three-part form is refused with a sentence naming the shape,
 rather than producing a facet with some of its fields missing. Neither variable
 set, nothing changes on the wire.
 
+## Naming the code that ran
+
+`--repository` and `--commit` (with `--branch` and `--path` where they matter) put
+the standard `sourceCodeLocation` job facet on every event, naming the code the
+same way `repoUrl` and `version` do in the OpenLineage spec. A container image can
+set `ART30_EMIT_REPOSITORY` and `ART30_EMIT_COMMIT` once, at build time, from the
+commit CI is building, so every job the image runs reports its code without
+repeating either flag:
+
+```dockerfile
+ARG GIT_COMMIT
+ENV ART30_EMIT_REPOSITORY=https://github.com/acme/fund-feed \
+    ART30_EMIT_COMMIT=${GIT_COMMIT}
+```
+
+A flag on the command line overrides the matching variable. Neither given,
+nothing changes on the wire.
+
 ## Two rules it keeps
 
 **It emits the published facet, not one of its own.** The schema is

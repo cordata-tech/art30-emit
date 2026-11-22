@@ -7,6 +7,15 @@ without a major version is what goes on the wire: the `processing` facet's key a
 schema URL, and the use of the standard `tags` dataset facet for classification,
 because a consumer's record depends on both.
 
+## Unreleased
+
+- **The code that ran is reported as the standard `sourceCodeLocation` job
+  facet**, from `--repository`/`--commit` (and optionally `--branch`/`--path`),
+  or from `ART30_EMIT_REPOSITORY`/`ART30_EMIT_COMMIT`/`ART30_EMIT_BRANCH`/
+  `ART30_EMIT_PATH` when the flags are not given — so a container image can set
+  them once at build time and every job it runs reports the same code. Neither
+  given, nothing changes.
+
 ## 0.2.0 — 2026-11-21
 
 - **The launching task is named as parent, when `OPENLINEAGE_PARENT_ID` is set.**

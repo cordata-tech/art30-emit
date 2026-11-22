@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import pytest
-from openlineage.client.facet_v2 import parent_run
+from openlineage.client.facet_v2 import parent_run, source_code_location_job
 
 from art30_emit import FACET_KEY, FACET_SCHEMA, Declaration, declare
 from art30_emit.emit import split
@@ -261,3 +261,69 @@ def test_the_parent_facet_matches_what_dbt_ol_builds_for_the_same_values(
     assert facet["job"]["namespace"] == expected.job.namespace
     assert facet["job"]["name"] == expected.job.name
     assert facet["run"]["runId"] == expected.run.runId
+
+
+def test_the_source_code_location_facet_carries_repository_and_commit(
+    events: Callable[[], list[dict]],
+) -> None:
+    with declare(
+        "acme.crm/export",
+        repository="https://github.com/acme/crm-export",
+        commit="f99310b4",
+        branch="main",
+        path="jobs/export",
+    ):
+        pass
+
+    facet = events()[0]["job"]["facets"]["sourceCodeLocation"]
+    assert facet["type"] == "git"
+    assert facet["repoUrl"] == "https://github.com/acme/crm-export"
+    assert facet["version"] == "f99310b4"
+    assert facet["branch"] == "main"
+    assert facet["path"] == "jobs/export"
+
+
+def test_without_repository_or_commit_no_source_code_location_facet(
+    events: Callable[[], list[dict]],
+) -> None:
+    with declare("acme.crm/export"):
+        pass
+
+    assert "sourceCodeLocation" not in events()[0]["job"]["facets"]
+
+
+def test_source_code_location_falls_back_to_env_vars(
+    events: Callable[[], list[dict]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ART30_EMIT_REPOSITORY", "https://github.com/acme/crm-export")
+    monkeypatch.setenv("ART30_EMIT_COMMIT", "f99310b4")
+    with declare("acme.crm/export"):
+        pass
+
+    facet = events()[0]["job"]["facets"]["sourceCodeLocation"]
+    assert facet["repoUrl"] == "https://github.com/acme/crm-export"
+    assert facet["version"] == "f99310b4"
+
+
+def test_an_explicit_value_overrides_the_env_var(
+    events: Callable[[], list[dict]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ART30_EMIT_COMMIT", "from-the-image")
+    with declare(
+        "acme.crm/export", repository="https://github.com/acme/crm-export", commit="from-the-cli"
+    ):
+        pass
+
+    assert events()[0]["job"]["facets"]["sourceCodeLocation"]["version"] == "from-the-cli"
+
+
+def test_the_source_code_location_facet_matches_the_published_schema(
+    events: Callable[[], list[dict]],
+) -> None:
+    with declare(
+        "acme.crm/export", repository="https://github.com/acme/crm-export", commit="f99310b4"
+    ):
+        pass
+
+    facet = events()[0]["job"]["facets"]["sourceCodeLocation"]
+    assert facet["_schemaURL"] == source_code_location_job.SourceCodeLocationJobFacet._get_schema()

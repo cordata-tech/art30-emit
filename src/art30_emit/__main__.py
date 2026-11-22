@@ -109,6 +109,36 @@ def _parser() -> argparse.ArgumentParser:
         help="reuse an existing run id instead of generating one",
     )
     parser.add_argument(
+        "--repository",
+        default="",
+        metavar="URL",
+        help=(
+            "where the code lives, as the standard sourceCodeLocation job facet's "
+            "repoUrl; falls back to ART30_EMIT_REPOSITORY"
+        ),
+    )
+    parser.add_argument(
+        "--commit",
+        default="",
+        metavar="SHA",
+        help=(
+            "the version that ran, as sourceCodeLocation's version; falls back to ART30_EMIT_COMMIT"
+        ),
+    )
+    parser.add_argument(
+        "--branch",
+        default="",
+        help="sourceCodeLocation's branch, optional; falls back to ART30_EMIT_BRANCH",
+    )
+    parser.add_argument(
+        "--path",
+        default="",
+        help=(
+            "where in the repository, optional, as sourceCodeLocation's path; falls "
+            "back to ART30_EMIT_PATH"
+        ),
+    )
+    parser.add_argument(
         "command",
         nargs=argparse.REMAINDER,
         help="-- followed by the command to run",
@@ -133,6 +163,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         writes=tuple(args.writes),
         classify=_classify(args.tag),
         run_id=args.run_id,
+        repository=args.repository,
+        commit=args.commit,
+        branch=args.branch,
+        path=args.path,
     )
 
     emit(declaration, RunState.START)

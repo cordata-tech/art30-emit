@@ -55,6 +55,21 @@ def test_the_declaration_reaches_the_event(events: Callable[[], list[dict]]) -> 
     assert [tag["value"] for tag in tags] == ["financial"]
 
 
+def test_repository_and_commit_reach_the_event(events: Callable[[], list[dict]]) -> None:
+    _run(
+        "--job", "acme.crm/export",
+        "--repository", "https://github.com/acme/crm-export",
+        "--commit", "f99310b4",
+        "--branch", "main",
+        "--", sys.executable, "-c", "pass",
+    )  # fmt: skip
+
+    facet = events()[0]["job"]["facets"]["sourceCodeLocation"]
+    assert facet["repoUrl"] == "https://github.com/acme/crm-export"
+    assert facet["version"] == "f99310b4"
+    assert facet["branch"] == "main"
+
+
 def test_nothing_to_run_is_an_error(events: Callable[[], list[dict]]) -> None:
     with pytest.raises(SystemExit, match="after --"):
         _run("--job", "demo/hello")

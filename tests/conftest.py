@@ -20,6 +20,10 @@ def events(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Callable[[], list
     monkeypatch.delenv("OPENLINEAGE_CONFIG", raising=False)
     monkeypatch.delenv("OPENLINEAGE_PARENT_ID", raising=False)
     monkeypatch.delenv("OPENLINEAGE_ROOT_PARENT_ID", raising=False)
+    monkeypatch.delenv("ART30_EMIT_REPOSITORY", raising=False)
+    monkeypatch.delenv("ART30_EMIT_COMMIT", raising=False)
+    monkeypatch.delenv("ART30_EMIT_BRANCH", raising=False)
+    monkeypatch.delenv("ART30_EMIT_PATH", raising=False)
 
     def read() -> list[dict]:
         if not target.exists():

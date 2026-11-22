@@ -34,7 +34,7 @@ from openlineage.client.event_v2 import (
     set_producer,
 )
 from openlineage.client.facet_v2 import JobFacet, error_message_run, parent_run
-from openlineage.client.generated import tags_dataset
+from openlineage.client.generated import source_code_location_job, tags_dataset
 from openlineage.client.transport.file import FileConfig, FileTransport
 
 #: Every event says which version of what produced it. A consumer weighing an
@@ -67,6 +67,14 @@ class ProcessingJobFacet(JobFacet):
         return FACET_SCHEMA
 
 
+#: The env vars a container image sets once, at build time, so every job it runs
+#: reports the same code without repeating `--repository`/`--commit` on each one.
+REPOSITORY_ENV = "ART30_EMIT_REPOSITORY"
+COMMIT_ENV = "ART30_EMIT_COMMIT"
+BRANCH_ENV = "ART30_EMIT_BRANCH"
+PATH_ENV = "ART30_EMIT_PATH"
+
+
 @dataclass
 class Declaration:
     """What one piece of work declares about itself.
@@ -76,6 +84,11 @@ class Declaration:
     of those to the tags that apply to it, which is how an Art. 30 record learns
     the categories, data subjects, residency and retention it cannot otherwise
     evidence for this system.
+
+    `repository`, `commit`, `branch` and `path` fall back to `ART30_EMIT_REPOSITORY`,
+    `ART30_EMIT_COMMIT`, `ART30_EMIT_BRANCH` and `ART30_EMIT_PATH` when not given
+    directly, so a container image can set them once and every job it runs reports
+    the same code.
     """
 
     job: str
@@ -85,6 +98,10 @@ class Declaration:
     writes: Sequence[str] = field(default_factory=tuple)
     classify: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
     run_id: str = ""
+    repository: str = ""
+    commit: str = ""
+    branch: str = ""
+    path: str = ""
 
     def __post_init__(self) -> None:
         if "/" not in self.job:
@@ -93,6 +110,10 @@ class Declaration:
                 "`acme.crm/consent-sync`: a name without a namespace is not an identity"
             )
         self.run_id = self.run_id or str(uuid.uuid4())
+        self.repository = self.repository or os.environ.get(REPOSITORY_ENV, "")
+        self.commit = self.commit or os.environ.get(COMMIT_ENV, "")
+        self.branch = self.branch or os.environ.get(BRANCH_ENV, "")
+        self.path = self.path or os.environ.get(PATH_ENV, "")
 
     @property
     def namespace(self) -> str:
@@ -228,6 +249,18 @@ def _event(
         job_facets["processing"] = ProcessingJobFacet(
             purpose=declaration.purpose, legal_basis=declaration.legal_basis
         )
+    if declaration.repository or declaration.commit:
+        # `url` is the one field the spec requires; an emitter with nothing more
+        # specific than the repository puts it there too, the same way the
+        # OpenLineage client's own git auto-detection does.
+        job_facets["sourceCodeLocation"] = source_code_location_job.SourceCodeLocationJobFacet(
+            type="git",
+            url=declaration.repository,
+            repoUrl=declaration.repository or None,
+            version=declaration.commit or None,
+            branch=declaration.branch or None,
+            path=declaration.path or None,
+        )
 
     run_facets: dict[str, Any] = {}
     parent = _parent_facet()
@@ -269,6 +302,10 @@ def declare(
     writes: Sequence[str] = (),
     classify: Mapping[str, Mapping[str, str]] | None = None,
     run_id: str = "",
+    repository: str = "",
+    commit: str = "",
+    branch: str = "",
+    path: str = "",
 ) -> Generator[Declaration]:
     """Emit START around a piece of work, and COMPLETE or FAIL after it.
 
@@ -288,6 +325,10 @@ def declare(
         writes=tuple(writes),
         classify=dict(classify or {}),
         run_id=run_id,
+        repository=repository,
+        commit=commit,
+        branch=branch,
+        path=path,
     )
     emit(declaration, RunState.START)
     try:
