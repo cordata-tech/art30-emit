@@ -7,7 +7,7 @@ without a major version is what goes on the wire: the `processing` facet's key a
 schema URL, and the use of the standard `tags` dataset facet for classification,
 because a consumer's record depends on both.
 
-## Unreleased
+## 0.3.0 — 2026-11-22
 
 - **The code that ran is reported as the standard `sourceCodeLocation` job
   facet**, from `--repository`/`--commit` (and optionally `--branch`/`--path`),

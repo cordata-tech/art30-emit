@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from .emit import Declaration, declare, emit
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 #: The key the facet occupies in ``job.facets``, and the published schema it
 #: conforms to. Both are the same strings `pipeline-runtime` emits and `qedro`

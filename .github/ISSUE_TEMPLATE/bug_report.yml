@@ -33,7 +33,7 @@ body:
     attributes:
       label: art30-emit and openlineage-python versions
       description: "`pip show art30-emit openlineage-python | grep -E '^(Name|Version)'`"
-      placeholder: art30-emit 0.2.0, openlineage-python 1.55.0
+      placeholder: art30-emit 0.3.0, openlineage-python 1.53.0
     validations:
       required: true
 
